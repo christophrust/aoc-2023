@@ -3,3 +3,4 @@
 /d03/target/
 /d04/target/
 *.lock
+*/target/
