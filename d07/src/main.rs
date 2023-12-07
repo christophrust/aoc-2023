@@ -14,7 +14,6 @@ fn main() {
         .filter_map(|x| {
             let x = x.unwrap();
             if let Some((_,[h, w])) = re.captures(&x).map(|x| x.extract()) {
-                println!("h: {}, b: {}", h, w);
                 Some((score_hand(h), w.parse::<u32>().unwrap(), h.to_string()))
             } else {
             None
@@ -41,7 +40,7 @@ fn card_value(c: &char) -> usize {
         'A' => 14,
         'K' => 13,
         'Q' => 12,
-        'J' => 11,
+        'J' => 1,
         'T' => 10,
         x => match x.to_digit(10) {
             Some(d) => d as usize,
@@ -53,7 +52,7 @@ fn card_value(c: &char) -> usize {
 
 
 fn collect_hand(h: &str) -> usize {
-    let mut m = h
+    let hm = h
         .chars()
         .fold(HashMap::<char, usize>::new(), |mut m, c| {
             if let Some(v) = m.get_mut(&c) {
@@ -62,11 +61,15 @@ fn collect_hand(h: &str) -> usize {
                 m.insert(c,1);
             }
             m
-        })
+        });
+    let mut m = hm
         .iter()
         .map(|(_,&v)| v)
         .collect::<Vec<usize>>();
     m.sort_unstable_by(|a, b| b.cmp(&a));
+    if let Some(jj) = hm.get(&'J') {
+        m[0] += jj;
+    }
     match m[0] {
         5 => 7,
         4 =>  6,
