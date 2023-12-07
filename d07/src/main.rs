@@ -20,11 +20,11 @@ fn main() {
             }
         })
         .collect();
-    hands.sort_unstable_by_key(|x| x.0);
+    hands.sort_by_key(|x| x.0);
     let mut cnt = 1;
 
     let res = hands.into_iter().fold(0, |mut c,(s,b,h)| {
-        println!("h: {}, b: {}, s: {:?}", h, b, s);
+        println!("h: {}, b: {}, s: {:?}, rank: {}", h, b, s, cnt);
         c += b * cnt;
         cnt += 1;
         c
@@ -42,17 +42,14 @@ fn card_value(c: &char) -> usize {
         'Q' => 12,
         'J' => 1,
         'T' => 10,
-        x => match x.to_digit(10) {
-            Some(d) => d as usize,
-            None => {println!("---{}---", x); panic!()}
-        }
+        x => x.to_digit(10).unwrap() as usize,
     }
 }
 
 
 
 fn collect_hand(h: &str) -> usize {
-    let hm = h
+    let mut hm = h
         .chars()
         .fold(HashMap::<char, usize>::new(), |mut m, c| {
             if let Some(v) = m.get_mut(&c) {
@@ -62,13 +59,22 @@ fn collect_hand(h: &str) -> usize {
             }
             m
         });
+    let nj = match hm.remove(&'J') {
+        Some(x) => x,
+        None => 0,
+    };
     let mut m = hm
         .iter()
-        .map(|(_,&v)| v)
+        .map(|(_,&v)| {
+            v
+        })
         .collect::<Vec<usize>>();
+
     m.sort_unstable_by(|a, b| b.cmp(&a));
-    if let Some(jj) = hm.get(&'J') {
-        m[0] += jj;
+    if m.len() > 0{
+        m[0] += nj;
+    } else {
+        m = vec![nj];
     }
     match m[0] {
         5 => 7,
