@@ -29,21 +29,20 @@ fn main() {
     let mut cnt = 0;
     let mut s = "AAA".to_string();
     loop {
-        for d in directions
-            .iter() {
-                cnt += 1;
-                match d {
-                    'R' => {
-                        s = m.get(&s).unwrap().1.clone();
-                    },
-                    _ =>{
-                        s = m.get(&s).unwrap().0.clone();
-                    },
-                }
-                if s == "ZZZ".to_string() {
-                    break;
-                }
+        for d in directions.iter() {
+            cnt += 1;
+            match d {
+                'R' => {
+                    s = m.get(&s).unwrap().1.clone();
+                },
+                _ =>{
+                    s = m.get(&s).unwrap().0.clone();
+                },
             }
+            if s == "ZZZ".to_string() {
+                break;
+            }
+        }
         if s == "ZZZ".to_string() {
             break;
         }
@@ -96,7 +95,7 @@ fn main() {
                     a.push(last);
                 }
             }
-            a.sort_unstable();
+            //a.sort_unstable();
             a
         })
         .into_iter()
