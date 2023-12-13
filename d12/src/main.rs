@@ -55,7 +55,7 @@ fn main() {
 #[cached]
 fn permute(s: String, r: Vec<i64>) -> i64 {
 
-    // println!("called with {} and {:?}", s, r);
+    println!("called with {} and {:?}", s, r);
     let s = s.trim_matches('.');
 
 
@@ -65,55 +65,25 @@ fn permute(s: String, r: Vec<i64>) -> i64 {
             Some(_) => 0,
         }
     }
-
-
-    let mut res = 0;
-    if s.len() < (r.iter().sum::<i64>() as usize + r.len() - 1) || s.len() == 0 {
+    if s.len() == 0 && r.len() > 0 {
         return 0;
     }
-
-    if s.chars().filter(|&x| x == '#').count() > r.iter().sum::<i64>() as usize {
-        return 0;
-    }
-
-    if s.chars().all(|x| x == '?') {
-        if r.len() == 1 {
-            return s.len() as i64 - r[0] + 1;
-        }
-
-        let a = r.iter().map(|x| x+1).sum::<i64>();
-        let b = s.len() as i64 + 1;
-        let rr = binom(r.len() as i64 + b - a, r.len() as i64);
-       //  print!(" rr-> {}\n", rr);
-        return rr;
-    }
-
-
-
     let mut cnt = 0;
 
-    let (p, remainder) = s.split_at(r[0] as usize);
+    let (cur, rem) = r.split_at(1);
 
-    if p.chars().all(|x| x == '?' || x == '#') {
-
-        if r.len() == 1 && remainder.chars().all(|x| x != '#') {
-            cnt += 1;
-        } else if r.len() > 1 {
-            let (p, rem) = remainder.split_at(1);
-            if p != "#" {
-                cnt += permute(rem.to_string(), r[1..].to_vec());
-            }
+    for i in 0..(s.len() - rem.iter().sum::<i64>() as usize - rem.len() - cur[0] as usize ) {
+        if s.chars().take(i).find(|&x| x == '#').is_some() {
+            break;
+        }
+        let nxt = i + cur[0] as usize;
+        if nxt <= s.len() &&
+            s[i..nxt].find('.').is_none() &&
+            (s.chars().nth(nxt).is_none() || s.chars().nth(nxt).unwrap() != '#') {
+            cnt += permute(s[nxt+1..].to_string(), rem.to_vec())
         }
     }
 
-    match s.split_at(1) {
-        ("#", _) => {},
-        (_, rem) => {
-            cnt += permute(rem.to_string(), r);
-        }
-    }
-
-    // print!(" --> {}\n", cnt);
     cnt
 }
 
@@ -149,10 +119,5 @@ mod tests {
 
     }
 
-    #[test]
-    fn test_binom() {
-        assert_eq!(binom(3,2), 3);
-        assert_eq!(binom(4,2), 6);
-    }
 
 }
