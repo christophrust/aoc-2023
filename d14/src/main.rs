@@ -42,6 +42,7 @@ struct Platform {
     cubes: Vec<(usize,usize)>,
     rocks: Vec<(usize,usize)>,
     height: usize,
+    width: usize,
 }
 
 impl Platform {
@@ -51,10 +52,13 @@ impl Platform {
         let mut r = 0;
         let mut cubes = Vec::<(usize,usize)>::new();
         let mut rocks = Vec::<(usize,usize)>::new();
+        let mut w = None;
         io::BufReader::new(&file)
             .lines()
             .for_each(|l| {
-                for (i,c) in l.unwrap().char_indices() {
+                let l = l.unwrap();
+                if w.is_none() {w = Some(l.len())}
+                for (i,c) in l.char_indices() {
                     match c {
                         'O' => {
                             cubes.push((r,i));
@@ -67,13 +71,21 @@ impl Platform {
                 }
                 r += 1;
             });
-        Self { cubes, rocks, height: r}
+        Self { cubes, rocks, height: r, width: w.unwrap()}
     }
 
-    fn slide(&mut self, d: char) {
-        type O = std::cmp::Ordering;
+    fn arrange(&mut self, direction: char) {
         self.cubes.sort_unstable_by_key(|(r,c)| {
-            match d {
+            match direction {
+                'N' => (*c,*r),
+                'S' => (*c,self.height - *r),
+                'E' => (*r,*c),
+                'W' => (*r,self.width - *c),
+                _ => unreachable!(),
+            }
+        });
+        self.rocks.sort_unstable_by_key(|(r,c)| {
+            match direction {
                 'N' => (*c,*r),
                 'S' => (*c,self.height - *r),
                 'E' => (*r,*c),
@@ -81,37 +93,65 @@ impl Platform {
                 _ => unreachable!(),
             }
         });
-        self.rocks.sort_unstable_by_key(|(r,c)| {
-            match d {
-                'N' => (*c,*r),
-                'S' => (self.height - *c,self.height - *r),
-                'E' => (*r,*c),
-                'W' => (self.height - *r,self.height - *c),
-                _ => unreachable!(),
-            }
-        });
-        // println!("{:?}", self);
+    }
 
-        let (mut c, mut r, mut i, mut j) = (self.cubes[0].1,0,0,0);
+    fn set_stone_vpos(&mut self, i: usize, pos: usize, direction: char) {
+        match direction {
+            'N' => {
+                self.cubes[i].0 = pos;
+            }
+            'S' => {
+                self.cubes[i].0 = self.height - pos;
+            }
+            'E' => {
+                self.cubes[i].1 = self.width - pos;
+            },
+            'W' => {
+                self.cubes[i].1= pos;
+            },
+            _ => unreachable!(),
+        };
+    }
+
+
+    fn get_stone_hpos(&self, i: usize, direction: char) -> usize {
+        match direction {
+            'N' | 'S' => self.cubes[i].1,
+            'E' | 'W' => self.cubes[i].0,
+            _ => unreachable!(),
+        }
+    }
+
+
+    fn get_rock_vpos(&self, i: usize, direction: char) -> usize {
+        match direction {
+            'N' => self.rocks[i].0,
+            'S' => self.height -self.rocks[i].0,
+            'E' => self.width - self.rocks[i].1,
+            'W' =>self.rocks[i].1,
+            _ => unreachable!(),
+        }
+    }
+
+    fn slide(&mut self, direction: char) {
+        type O = std::cmp::Ordering;
+        self.arrange(direction);
+
+        let (mut c, mut r, mut i, mut j) = (self.get_stone_hpos(0, direction),0,0,0);
         loop {
 
-            if d == 'N' || d == 'S' {
-                if c != self.cubes[i].1 {
-                    r = 0;
-                    c = self.cubes[i].1;
-                }
-            } else {
-                if c != self.cubes[i].0 {
-                    r = 0;
-                    c = self.cubes[i].0;
-                }
+
+            if c != self.get_stone_hpos(i, direction) {
+                r = 0;
+                c = self.get_stone_hpos(i, direction);
             }
 
-            let x =match d {
+
+            let x =match direction {
                 'N' => (self.cubes[i].0.cmp(&self.rocks[j].0), self.cubes[i].1.cmp(&self.rocks[j].1)),
-                'S' => (self.rocks[j].0.cmp(&self.cubes[i].0), self.rocks[j].1.cmp(&self.cubes[i].1)),
+                'S' => (self.rocks[j].0.cmp(&self.cubes[i].0), self.cubes[i].1.cmp(&self.rocks[j].1)),
                 'E' => (self.cubes[i].1.cmp(&self.rocks[j].1), self.cubes[i].1.cmp(&self.rocks[j].0)),
-                'W' => (self.rocks[j].1.cmp(&self.cubes[i].1), self.rocks[j].1.cmp(&self.cubes[i].0)),
+                'W' => (self.rocks[j].1.cmp(&self.cubes[i].1), self.rocks[j].1.cmp(&self.cubes[i].0)), // TODO
                 _ => unreachable!(),
             };
 
@@ -120,34 +160,34 @@ impl Platform {
                     if j + 1 < self.rocks.len() {
                         j+=1;
                     } else {
-                        self.cubes[i].0 = r;
+                        self.set_stone_vpos(i, r, direction);
                         r+=1;
                         i+=1;
                     }
                 },
                 (O::Less, _) => {
-                    self.cubes[i].0 = r;
+                    self.set_stone_vpos(i, r, direction);
                     r+=1;
                     i+=1;
                 },
                 (_, O::Equal) => {
                     // println!("--{r}");
                     if j + 1 < self.rocks.len() {
-                        r = self.rocks[j].0 + 1;
+                        r = self.get_rock_vpos(j, direction) + 1;
                         j+=1;
-                    } else if j + 1 == self.rocks.len() && r <= self.rocks[j].0 {
-                        r = self.rocks[j].0 + 1;
+                    } else if j + 1 == self.rocks.len() && r <= self.get_rock_vpos(j, direction) {
+                        r = self.get_rock_vpos(j, direction) + 1;
                     } else {
-                        self.cubes[i].0 = r;
+                        self.set_stone_vpos(i, r, direction);
                         r+=1;
                         i+=1;
                     }
                 },
                 (O::Greater, O::Less) => {
                     // println!("---{:?}",x);
-                    self.cubes[i].0 = r;
-                        r+=1;
-                        i+=1;
+                    self.set_stone_vpos(i, r, direction);
+                    r+=1;
+                    i+=1;
                 },
                 _ => {unreachable!()}
             }
