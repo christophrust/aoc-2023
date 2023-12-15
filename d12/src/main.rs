@@ -1,4 +1,3 @@
-// use rayon::prelude::{IntoParallelIterator, ParallelIterator};
 use regex::Regex;
 use std::fs::File;
 use std::io::{self, BufRead};
@@ -24,10 +23,6 @@ fn main() {
     let file = File::open("input.txt").unwrap();
     let res: i64 = io::BufReader::new(&file)
         .lines()
-        // .map(Result::unwrap)
-        // .collect::<Vec<String>>()
-        // .into_par_iter()
-        // .fold(|| 0_i64, |a, x| {
         .map(|x|{
             let x = x.unwrap();
             println!("{}", x);
