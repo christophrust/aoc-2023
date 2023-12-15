@@ -30,11 +30,10 @@ fn main() {
     println!("Part 1: {}", res);
 
     let mut p = Platform::from_file("input.txt");
-
     let res = p.cycle(1000000000);
-
     println!("Part 2: {}", res);
 }
+
 
 #[derive(Debug, Clone, Hash)]
 struct Platform {
@@ -43,6 +42,7 @@ struct Platform {
     height: usize,
     width: usize,
 }
+
 
 impl PartialEq for Platform {
     fn eq(&self, other: &Self) -> bool {
@@ -53,13 +53,13 @@ impl PartialEq for Platform {
 
         s_cubes.sort_unstable();
         o_cubes.sort_unstable();
-        s_rocks.sort_unstable();
-        o_rocks.sort_unstable();
         for i in 0..s_cubes.len() {
             if s_cubes[i] != o_cubes[i] {
                 return false;
             }
         }
+        s_rocks.sort_unstable();
+        o_rocks.sort_unstable();
         for i in 0..s_rocks.len() {
             if s_rocks[i] != o_rocks[i] {
                 return false;
@@ -214,7 +214,6 @@ impl Platform {
                     r+=1;
                     i+=1;
                 },
-                x => {unreachable!("{:?}, {:?}", x, (s1, s2, r1, r2))}
             }
             if i == self.cubes.len() {
                 break;
@@ -227,6 +226,7 @@ impl Platform {
     }
 
     fn cycle(&mut self, times: usize) -> usize {
+
         let mut hist = HashMap::<Self, usize>::new();
         let mut loads = Vec::<usize>::new();
         let mut start_cycle = 0_usize;
@@ -253,6 +253,7 @@ impl Platform {
         return loads[idx];
     }
 
+    #[allow(dead_code)]
     fn print(&self){
         println!("---------------------------------");
         for i in 0..self.width {
