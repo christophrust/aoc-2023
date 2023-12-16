@@ -268,7 +268,6 @@ impl Platform {
             loads.push(self.get_load());
 
             if let Some(s) = hist.get(self) {
-                println!("cycle len: {}", i + 1 - *s);
                 start_cycle = *s;
                 cycle_len = i + 1 - *s;
                 break;

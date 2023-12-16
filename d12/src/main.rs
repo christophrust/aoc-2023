@@ -51,7 +51,7 @@ fn main() {
 fn permute(s: String, r: Vec<i64>) -> i64 {
 
     println!("called with {} and {:?}", s, r);
-    let s = s.trim_matches('.');
+    // let s = s.trim_matches('.');
 
 
     if r.len() == 0 {
@@ -63,19 +63,21 @@ fn permute(s: String, r: Vec<i64>) -> i64 {
     if s.len() == 0 && r.len() > 0 {
         return 0;
     }
+
     let mut cnt = 0;
 
-    let (cur, rem) = r.split_at(1);
-
-    for i in 0..(s.len() - rem.iter().sum::<i64>() as usize - rem.len() - cur[0] as usize ) {
+    let (cur, rem) = (r[0], r[1..].to_vec());
+    let up = s.len() - rem.iter().sum::<i64>() as usize - rem.len() - cur as usize +1;
+    println!("{up}");
+    for i in 0..up {
+        println!("-- {i}");
         if s.chars().take(i).find(|&x| x == '#').is_some() {
             break;
         }
-        let nxt = i + cur[0] as usize;
+        let nxt = i + cur as usize;
         if nxt <= s.len() &&
-            s[i..nxt].find('.').is_none() &&
-            (s.chars().nth(nxt).is_none() || s.chars().nth(nxt).unwrap() != '#') {
-            cnt += permute(s[nxt+1..].to_string(), rem.to_vec())
+            s[i..nxt].find('.').is_none() && s.chars().nth(nxt) != Some('#') {
+                cnt += permute(s[nxt+1..].to_string(), rem.clone())
         }
     }
 
@@ -96,6 +98,7 @@ mod tests {
         assert_eq!(permute("???#?##???".to_string(), vec![4,4]), 1);
         assert_eq!(permute("????.######..#####.".to_string(), vec![1,6,5]), 4);
 
+        assert_eq!(permute("??".to_string(), vec![1]), 2);
         assert_eq!(permute("?????".to_string(), vec![2,1]), 3);
         assert_eq!(permute("?????".to_string(), vec![2,1]), 3);
         assert_eq!(permute("?????".to_string(), vec![2]), 4);
