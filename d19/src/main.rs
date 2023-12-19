@@ -8,9 +8,12 @@ use regex::Regex;
 fn main() {
 
     let mut mp = HashMap::<String, Vec<(String, Option<(char,char,i64)>)>>::new();
-    let re1 = Regex::new(r"([a-z]+)\{(.*)\}").unwrap();
-    let re2 = Regex::new(r"([a-zAR]+)([><]*)([0-9]*)[:]*([a-zRA]*)").unwrap();
-    let re3 = Regex::new(r"\{x=([0-9]*),m=([0-9]*),a=([0-9]*),s=([0-9]*)\}").unwrap();
+    let re1 = Regex::new(r"([a-z]+)\{(.*)\}")
+        .unwrap();
+    let re2 = Regex::new(r"([a-zAR]+)([><]*)([0-9]*)[:]*([a-zRA]*)")
+        .unwrap();
+    let re3 = Regex::new(r"\{x=([0-9]*),m=([0-9]*),a=([0-9]*),s=([0-9]*)\}")
+        .unwrap();
 
     let mut chk = false;
 
@@ -20,7 +23,7 @@ fn main() {
         .map(|x| {
             let x = x.unwrap();
             if &x == "" {
-                println!("{:?}", mp);
+                // println!("{:?}", mp);
                 chk = true;
             } else if !chk {
                 let (_, [nm, rules]) = re1.captures(&x).map(|x| x.extract()).unwrap();
@@ -92,6 +95,77 @@ fn main() {
         })
         .sum::<i64>();
 
-    println!("Part 1a: {}", res);
+    println!("Part 1: {}", res);
 
+
+    let leafs = walk(&mp, "in", [(1, 4001);4]);
+
+    let res = leafs
+        .into_iter()
+        .map(|x| {
+            x.iter().fold(1, |a,i| a * (i.1 - i.0).max(0))
+        })
+        .sum::<i64>();
+    println!("Part 2: {}", res);
+}
+
+
+fn walk(
+    m: &HashMap<String, Vec<(String, Option<(char,char,i64)>)>>,
+    entry: &str,
+    reg: [(i64,i64);4],
+) -> Vec<[(i64,i64);4]>
+{
+    let mut res = Vec::<[(i64,i64);4]>::new();
+    let mut rg = reg;
+    for cur in  m.get(entry).expect(&format!("{entry}")) {
+
+        match &cur {
+            (t, None) => {
+                if t == "A" {
+                    res.push(rg);
+                } else if t == "R" {
+                } else {
+                    res.append(&mut walk(m, t, rg));
+                }
+            },
+            (t, Some((f, cmp, n))) => {
+                let i = match f {
+                    'x' => 0,
+                    'm' => 1,
+                    'a' => 2,
+                    's' => 3,
+                    _ => unreachable!(),
+                };
+                match cmp {
+                    '<' => {
+                        let tmp = rg[i].1;
+                        rg[i].1 = *n;
+                        if t == "A" {
+                            res.push(rg);
+                        } else if t == "R" {
+                        } else {
+                            res.append(&mut walk(m, t, rg));
+                        }
+                        rg[i].1 = tmp;
+                        rg[i].0 = *n;
+                    },
+                    '>' => {
+                        let tmp = rg[i].0;
+                        rg[i].0 = *n + 1;
+                        if t == "A" {
+                            res.push(rg);
+                        } else if t == "R" {
+                        } else {
+                            res.append(&mut walk(m, t, rg));
+                        }
+                        rg[i].0 = tmp;
+                        rg[i].1 = *n + 1;
+                    },
+                    _ => unreachable!(),
+                }
+            }
+        }
+    }
+    res
 }
