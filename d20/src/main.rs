@@ -12,7 +12,7 @@ fn main() {
     let mut hm = HashMap::<String, Module>::new();
     let mut broadcasts = Vec::<String>::new();
 
-    let file = File::open("input1.txt").unwrap();
+    let file = File::open("input.txt").unwrap();
     io::BufReader::new(&file)
         .lines()
         .for_each(|x|{
@@ -56,12 +56,20 @@ fn main() {
 
     let mut mods = Modules{ modules, broadcasts};
 
-    println!("{:?}", mods);
-    println!("-----------------------");
-    let (h,l) = mods.press_button();
-    println!("{:?}", mods);
 
-    println!("Part 1: {}, {}", h,l);
+    let (mut l, mut h) = (0,0);
+
+    for _i in 0..1000 {
+        let (ll,hh) = mods.press_button();
+        // println!("{_i}:\t{ll},{hh}");
+        l += ll;
+        h += hh;
+        if mods.all_states_off() {
+            break;
+        }
+    }
+
+    println!("Part 1: {},{}, {}", l * h, l ,h);
 }
 
 
@@ -74,7 +82,7 @@ struct Modules{
     broadcasts: Vec<String>,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct Message {
     src: String,
     dst: String,
@@ -92,37 +100,26 @@ impl Modules {
                 Message { src: "broadcaster".to_string(), dst: x.clone(), sig: Signal::Low }
             })
             .collect();
-        lows += queue.len();
+        lows += queue.len() + 1;
 
         while !queue.is_empty() {
             let mut nq = VecDeque::<Message>::new();
 
             while let Some(msg) = queue.pop_front() {
-
+                // println!("{:?}", msg);
                 match self.modules.get_mut(&msg.dst) {
                     Some(Module::Conjunction(m)) => {
                         // we have to collect all entries of name n in quee
-                        let (inq, sigs) = queue
-                            .iter()
-                            .fold(
-                                (VecDeque::<Message>::new(),Vec::<(String,Signal)>::new()),
-                                |mut a,i| {
-                                    if i.dst == msg.dst {
-                                        a.1.push((i.src.clone(), i.sig.clone()));
-                                    } else {
-                                        a.0.push_back(i.clone());
-                                    }
-                                    a
-                                }
-                            );
-                        let sig = m.get_signal(sigs).unwrap();
+                        // println!("{:?}", queue);
+
+                        let sig = m.get_signal((msg.src, msg.sig)).unwrap();
                         let mut recpts: VecDeque<Message>= m.get_recipients().into_iter().map(|x| Message{src: msg.dst.clone(), dst: x.clone(), sig: sig.clone()}).collect();
+                        // println!("{:?}, {:?}",sigs, recpts);
                         match sig {
                             Signal::High => {highs += recpts.len();},
                             Signal::Low => {lows += recpts.len();},
                         }
                         nq.append(&mut recpts);
-                        queue = inq;
                     },
                     Some(Module::FlipFlop(m)) => {
                         if let Some(sig) = m.get_signal(msg.sig) {
@@ -142,6 +139,25 @@ impl Modules {
         (lows, highs)
     }
 
+    fn all_states_off(&self) -> bool {
+        self.modules.iter().map(|(_,m)| {
+            match m {
+                Module::FlipFlop(ff) => {
+                    if ff.state {
+                        return false;
+                    }
+                },
+                Module::Conjunction(cj) => {
+                    for (_,s) in cj.inputs.iter() {
+                        if *s == Signal::High {
+                            return false;
+                        }
+                    }
+                }
+            }
+            true
+        }).all(|x| x == true)
+    }
 }
 trait Recipients {
     fn get_recipients(&self) -> &Vec<String>;
@@ -176,12 +192,6 @@ struct FlipFlop {
 }
 
 impl FlipFlop {
-    fn new() -> Self {
-        Self{
-            state: false,
-            recipients: vec![],
-        }
-    }
     fn get_signal(&mut self, signal: Signal ) -> Option<Signal> {
         if signal == Signal::Low {
             match self.state {
@@ -220,23 +230,14 @@ struct Conjunction {
 
 
 impl Conjunction {
-    fn new() -> Self {
-        Self{
-            inputs: HashMap::<String, Signal>::new(),
-            recipients: vec![],
+    fn get_signal(&mut self, signal: (String, Signal) ) -> Option<Signal> {
+        let (sn, s) = signal;
+        if let Some(v) = self.inputs.get_mut(&sn) {
+            *v = s;
+        } else {
+            unreachable!()
         }
-    }
-    fn add_input(&mut self, inp: String) {
-        self.inputs.insert(inp, Signal::Low);
-    }
-    fn get_signal(&mut self, signals: Vec<(String, Signal)> ) -> Option<Signal> {
-        for (sn, s) in signals {
-            if let Some(v) = self.inputs.get_mut(&sn) {
-                *v = s;
-            } else {
-                unreachable!()
-            }
-        }
+
         match self.inputs.iter().all(|(_,x)| *x == Signal::High) {
             true => Some(Signal::Low),
             false => Some(Signal::High),
