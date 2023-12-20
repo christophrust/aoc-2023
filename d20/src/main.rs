@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::fs::File;
 use std::io::{self, BufRead};
 use regex::Regex;
@@ -10,7 +10,7 @@ fn main() {
     let re = Regex::new(r"([%&]*)([a-z]+) -> ([a-z, ]*)")
         .unwrap();
     let mut hm = HashMap::<String, Module>::new();
-    let mut broadcast = Vec::<String>::new();
+    let mut broadcasts = Vec::<String>::new();
 
     let file = File::open("input1.txt").unwrap();
     io::BufReader::new(&file)
@@ -21,7 +21,7 @@ fn main() {
             let recpts = recpts.split(", ").map(|x| x.to_string()).collect();
 
             match tp {
-                "" => {broadcast = recpts;},
+                "" => {broadcasts = recpts;},
                 "&" => {hm.insert(
                     nm.to_string(),
                     Module::Conjunction(
@@ -37,6 +37,7 @@ fn main() {
             };
             ()
         });
+
     let mut modules = hm.clone();
     for (k,v) in modules.iter_mut() {
         if let Module::Conjunction(m) = v {
@@ -53,13 +54,95 @@ fn main() {
         }
     }
 
-    println!("{:?}", modules);
+    let mut mods = Modules{ modules, broadcasts};
 
-    println!("Part 1: {}", 1);
+    println!("{:?}", mods);
+    println!("-----------------------");
+    let (h,l) = mods.press_button();
+    println!("{:?}", mods);
+
+    println!("Part 1: {}, {}", h,l);
 }
 
 
 
+
+
+#[derive(PartialEq,Eq, Debug, Clone)]
+struct Modules{
+    modules: HashMap<String, Module>,
+    broadcasts: Vec<String>,
+}
+
+#[derive(Clone)]
+struct Message {
+    src: String,
+    dst: String,
+    sig: Signal,
+}
+
+impl Modules {
+    fn press_button(&mut self) -> (usize, usize) {
+        let (mut lows, mut highs) = (0,0);
+
+        let mut queue: VecDeque<Message> = self
+            .broadcasts
+            .iter()
+            .map(|x| {
+                Message { src: "broadcaster".to_string(), dst: x.clone(), sig: Signal::Low }
+            })
+            .collect();
+        lows += queue.len();
+
+        while !queue.is_empty() {
+            let mut nq = VecDeque::<Message>::new();
+
+            while let Some(msg) = queue.pop_front() {
+
+                match self.modules.get_mut(&msg.dst) {
+                    Some(Module::Conjunction(m)) => {
+                        // we have to collect all entries of name n in quee
+                        let (inq, sigs) = queue
+                            .iter()
+                            .fold(
+                                (VecDeque::<Message>::new(),Vec::<(String,Signal)>::new()),
+                                |mut a,i| {
+                                    if i.dst == msg.dst {
+                                        a.1.push((i.src.clone(), i.sig.clone()));
+                                    } else {
+                                        a.0.push_back(i.clone());
+                                    }
+                                    a
+                                }
+                            );
+                        let sig = m.get_signal(sigs).unwrap();
+                        let mut recpts: VecDeque<Message>= m.get_recipients().into_iter().map(|x| Message{src: msg.dst.clone(), dst: x.clone(), sig: sig.clone()}).collect();
+                        match sig {
+                            Signal::High => {highs += recpts.len();},
+                            Signal::Low => {lows += recpts.len();},
+                        }
+                        nq.append(&mut recpts);
+                        queue = inq;
+                    },
+                    Some(Module::FlipFlop(m)) => {
+                        if let Some(sig) = m.get_signal(msg.sig) {
+                            let mut recpts: VecDeque<Message> = m.get_recipients().into_iter().map(|x| Message{src: msg.dst.clone(), dst: x.clone(), sig: sig.clone()}).collect();
+                            match sig {
+                                Signal::High => {highs += recpts.len();},
+                                Signal::Low => {lows += recpts.len();},
+                            }
+                            nq.append(&mut recpts);
+                        };
+                    },
+                    _ => {},
+                }
+            }
+            queue = nq;
+        }
+        (lows, highs)
+    }
+
+}
 trait Recipients {
     fn get_recipients(&self) -> &Vec<String>;
 }
@@ -71,7 +154,7 @@ enum Signal {
     Low,
 }
 
-#[derive(PartialEq,Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 enum Module {
     FlipFlop(FlipFlop),
     Conjunction(Conjunction),
