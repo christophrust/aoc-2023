@@ -36,7 +36,7 @@ fn main() {
     pos.insert(spos);
 
 
-    for _i in 0..146 {
+    for _i in 0..64 {
         pos = pos
             .into_iter()
             .fold(HashSet::<(isize,isize)>::new(), |mut a,(r,c)| {
@@ -59,42 +59,67 @@ fn main() {
     println!("Part1: {}",res);
 
 
-    // for r in 0..nr {
-    //     let ln = (0..nc)
-    //         .into_iter()
-    //         .map(|c| {
-    //             match pos.get(&(r,c)) {
-    //                 Some(_) => 'O',
-    //                 None => '.',
-    //             }
-    //         })
-    //         .collect::<String>();
-    //     println!("{ln}");
-    // }
-    let mut pos = HashSet::<(isize,isize)>::new();
-    // pos.insert((0,129));
-    pos.insert(spos);
+    let pat: Vec<usize>=  (0..3).into_iter().map(|j| {
+        let mut pos = HashSet::<(isize,isize)>::new();
+        pos.insert(spos);
 
-    for _i in 0..(65 + 3 * 131) {
-        pos = pos
-            .into_iter()
-            .fold(HashSet::<(isize,isize)>::new(), |mut a,(r,c)| {
-                for (dr,dc) in [(1,0),(-1,0),(0,1), (0,-1)] {
-                    let np = (r + dr, c + dc);
-                    if stones.get(&(np.0 % 131, np.1 % 131)).is_none() {
-                        a.insert(np);
+        for _i in 0..(65 + j * 131) {
+            pos = pos
+                .into_iter()
+                .fold(HashSet::<(isize,isize)>::new(), |mut a,(r,c)| {
+                    for (dr,dc) in [(1,0),(-1,0),(0,1), (0,-1)] {
+                        let np = (r + dr, c + dc);
+                        let (mut pr, mut pc) = (np.0 % 131, np.1 % 131);
+                        if pr < 0 {
+                            pr += 131;
+                        }
+                        if pc < 0 {
+                            pc += 131;
+                        }
+                        if stones.get(&(pr, pc)).is_none() {
+                            a.insert(np);
+                        }
                     }
-                }
-                a
-            });
-    }
+                    a
+                });
+        }
+        pos.len()
+    }).collect();
+
+    let fd : Vec<usize>= (1..pat.len())
+        .into_iter()
+        .map(|i| pat[i] - pat[i-1])
+        .collect();
+
+    let sd: Vec<usize> = (1..fd.len())
+        .into_iter()
+        .map(|i| fd[i] - fd[i-1])
+        .collect();
+
+    let d2 = sd[0] as u64;
+    let d1 = fd[0] as u64- d2;
+    let d0 = pat[0] as u64;
 
 
-
-    let res = pos.len();
-    println!("Part2: {}",res);
-
-    // println!("nc: {}",nc);
-    // println!("nr: {}",nr);
-    // println!("spos: {:?}",spos);
+    let i = 202300_u64; //  = (26501365 - 65) % 131
+    println!("Part 2: {}", i * d1 + i * (i+1) / 2 * d2 + d0)
 }
+
+
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    fn test_name() {
+
+        println!("{:?}", (0..4).into_iter().map(|i| i * 30572).collect::<Vec<usize>>());
+        assert_eq!(-3%2, 1);
+    }
+}
+
+
+
+// d2_i = c2
+// d1_1 = c2 * i + c1
+// d = sum d1_i + c = i * c1 + sum i * c2 =
