@@ -55,7 +55,7 @@ fn main() {
     }
 
     let mut mods = Modules{ modules, broadcasts};
-    let mut mods2 = mods.clone();
+    // let mut mods2 = mods.clone();
 
     let (mut l, mut h) = (0,0);
 
@@ -71,6 +71,7 @@ fn main() {
 
     println!("Part 1: {},{}, {}", l * h, l ,h);
 
+    let c1 =
 
 
     println!("Part 2: {},{}, {}", l * h, l ,h);
@@ -142,58 +143,58 @@ impl Modules {
         (lows, highs)
     }
 
-    fn press_button_count_rx_signals(&mut self) -> (usize, usize) {
+    // fn press_button_count_rx_signals(&mut self) -> (usize, usize) {
 
-        let (mut lows, mut highs) = (0,0);
+    //     let (mut lows, mut highs) = (0,0);
 
-        let mut queue: VecDeque<Message> = self
-            .broadcasts
-            .iter()
-            .map(|x| {
-                Message { src: "broadcaster".to_string(), dst: x.clone(), sig: Signal::Low }
-            })
-            .collect();
+    //     let mut queue: VecDeque<Message> = self
+    //         .broadcasts
+    //         .iter()
+    //         .map(|x| {
+    //             Message { src: "broadcaster".to_string(), dst: x.clone(), sig: Signal::Low }
+    //         })
+    //         .collect();
 
 
-        while !queue.is_empty() {
-            let mut nq = VecDeque::<Message>::new();
+    //     while !queue.is_empty() {
+    //         let mut nq = VecDeque::<Message>::new();
 
-            while let Some(msg) = queue.pop_front() {
+    //         while let Some(msg) = queue.pop_front() {
 
-                match self.modules.get_mut(&msg.dst) {
-                    Some(Module::Conjunction(m)) => {
+    //             match self.modules.get_mut(&msg.dst) {
+    //                 Some(Module::Conjunction(m)) => {
 
-                        let sig = m.get_signal((msg.src, msg.sig)).unwrap();
-                        let mut recpts: VecDeque<Message>= m.get_recipients().into_iter().map(|x| Message{src: msg.dst.clone(), dst: x.clone(), sig: sig.clone()}).collect();
-                        if m.get_recipients().contains(&"rx".to_string()) {
-                            if sig == Signal::Low {
-                                lows += 1;
-                            } else {
-                                highs += 1;
-                            }
-                        }
-                        nq.append(&mut recpts);
-                    },
-                    Some(Module::FlipFlop(m)) => {
-                        if let Some(sig) = m.get_signal(msg.sig) {
-                            let mut recpts: VecDeque<Message> = m.get_recipients().into_iter().map(|x| Message{src: msg.dst.clone(), dst: x.clone(), sig: sig.clone()}).collect();
-                            nq.append(&mut recpts);
-                            if m.get_recipients().contains(&"rx".to_string()) {
-                                if sig == Signal::Low {
-                                    lows += 1;
-                                } else {
-                                    highs += 1;
-                                }
-                            }
-                        };
-                    },
-                    _ => {},
-                }
-            }
-            queue = nq;
-        }
-        (lows, highs)
-    }
+    //                     let sig = m.get_signal((msg.src, msg.sig)).unwrap();
+    //                     let mut recpts: VecDeque<Message>= m.get_recipients().into_iter().map(|x| Message{src: msg.dst.clone(), dst: x.clone(), sig: sig.clone()}).collect();
+    //                     if m.get_recipients().contains(&"rx".to_string()) {
+    //                         if sig == Signal::Low {
+    //                             lows += 1;
+    //                         } else {
+    //                             highs += 1;
+    //                         }
+    //                     }
+    //                     nq.append(&mut recpts);
+    //                 },
+    //                 Some(Module::FlipFlop(m)) => {
+    //                     if let Some(sig) = m.get_signal(msg.sig) {
+    //                         let mut recpts: VecDeque<Message> = m.get_recipients().into_iter().map(|x| Message{src: msg.dst.clone(), dst: x.clone(), sig: sig.clone()}).collect();
+    //                         nq.append(&mut recpts);
+    //                         if m.get_recipients().contains(&"rx".to_string()) {
+    //                             if sig == Signal::Low {
+    //                                 lows += 1;
+    //                             } else {
+    //                                 highs += 1;
+    //                             }
+    //                         }
+    //                     };
+    //                 },
+    //                 _ => {},
+    //             }
+    //         }
+    //         queue = nq;
+    //     }
+    //     (lows, highs)
+    // }
 
     fn all_states_off(&self) -> bool {
         self.modules.iter().map(|(_,m)| {
