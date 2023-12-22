@@ -11,7 +11,7 @@ fn main() {
     let mut index = 0_usize;
     let mut space = Space3D{bricks: HashMap::new(), allocated: HashSet::new()};
 
-    let file = File::open("input1.txt").unwrap();
+    let file = File::open("input.txt").unwrap();
     io::BufReader::new(&file)
         .lines()
         .for_each(|l| {
@@ -79,8 +79,10 @@ fn main() {
         });
 
     space.allocate();
+    // println!("{:?}", space.bricks);
     space.settle(false);
 
+    // println!("{:?}", space.bricks);
     let res = (0..index)
                 .into_iter()
                 .filter(|idx| {
@@ -90,12 +92,20 @@ fn main() {
 
 
     println!("Part1: {}", res);
+
+    let res = (0..index)
+                .into_iter()
+                .map(|idx| {
+                    space.take_out_n_change(idx)
+                })
+                .sum::<usize>();
+    println!("Part2: {}", res);
 }
 
 
 #[derive(Debug,PartialEq, Eq, Clone)]
 struct Space3D {
-    bricks: HashMap<usize, (Vec<(usize,usize,usize)>, bool),>,
+    bricks: HashMap<usize, (Vec<(usize,usize,usize)>, bool)>,
     allocated: HashSet<(usize,usize,usize)>,
 }
 
@@ -105,9 +115,10 @@ impl Space3D {
         self.allocated = self.bricks.iter().map(|(_,p)| p.0.clone()).flatten().collect();
     }
 
-    fn settle(&mut self, stop_early: bool) -> bool {
+    fn settle(&mut self, stop_early: bool) -> usize {
 
-        let mut res = false;
+
+        let mut res = 0;
         let mut bv : Vec<(usize,usize)>= self
             .bricks
             .iter()
@@ -132,9 +143,8 @@ impl Space3D {
                     if self.allocated.get(&(px,py,minz-zd)).is_none() {
                         dz = zd;
                         if stop_early {
-                            return true;
+                            return 1;
                         }
-                        res = true;
                     } else {
                         break;
                     }
@@ -145,31 +155,44 @@ impl Space3D {
                     }) {
                         dz = zd;
                         if stop_early {
-                            return true;
+                            return 1;
                         }
-                        res = true;
                     } else {
                         break;
                     }
                 }
             }
             if dz > 0 {
+                res += 1;
                 for cube in cubes {
                     self.allocated.remove(&cube);
                     cube.2 -= dz;
-                    self.allocated.remove(cube);
+                    self.allocated.insert(*cube);
                 }
             }
         }
         res
     }
+
     fn take_out_is_safe(&self, index: usize) -> bool {
         let mut space_copy = self.clone();
         let take_out_brick = space_copy.bricks.remove(&index).unwrap();
         for cube in take_out_brick.0 {
             space_copy.allocated.remove(&cube);
         }
-        !space_copy.settle(true)
+        let check = space_copy.settle(true);
+        // println!("{}: {}", index, check);
+        check > 0
+    }
+
+    fn take_out_n_change(&self, index: usize) -> usize {
+        let mut space_copy = self.clone();
+        let take_out_brick = space_copy.bricks.remove(&index).unwrap();
+        for cube in take_out_brick.0 {
+            space_copy.allocated.remove(&cube);
+        }
+        // println!("{}: {}", index, check);
+        space_copy.settle(false)
     }
 }
 
