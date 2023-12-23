@@ -54,7 +54,7 @@ fn main() {
         }
     }
 
-    let mut mods = Modules{ modules, broadcasts};
+    let mut mods = Modules{ modules: modules.clone(), broadcasts: broadcasts.clone()};
     // let mut mods2 = mods.clone();
 
     let (mut l, mut h) = (0,0);
@@ -65,15 +65,55 @@ fn main() {
         l += ll;
         h += hh;
         if mods.all_states_off() {
+            println!("{_i}");
             break;
         }
     }
 
     println!("Part 1: {},{}, {}", l * h, l ,h);
 
-    let c1 =
+    let mut mods1 = Modules{ modules: modules.clone(), broadcasts: vec!["cx".to_string()]};
+    mods1.modules.remove("mf").unwrap();
+    let c1 = (0..)
+        .into_iter()
+        .take_while(|_| {
+            mods1.press_button();
+            !mods1.all_states_off()
+        })
+        .count();
 
 
+    let mut mods2 = Modules{ modules: modules.clone(), broadcasts: vec!["rh".to_string()]};
+    mods2.modules.remove("mf").unwrap();
+    let c2 = (0..)
+        .into_iter()
+        .take_while(|_| {
+            mods2.press_button();
+            !mods2.all_states_off()
+        })
+        .count();
+
+    let mut mods3 = Modules{ modules: modules.clone(), broadcasts: vec!["zq".to_string()]};
+    mods3.modules.remove("mf").unwrap();
+    let c3 = (0..)
+        .into_iter()
+        .take_while(|_| {
+            mods3.press_button();
+            !mods3.all_states_off()
+        })
+        .count();
+
+    let mut mods4 = Modules{ modules: modules.clone(), broadcasts: vec!["tv".to_string()]};
+    mods4.modules.remove("mf").unwrap();
+    let c4 = (0..)
+        .into_iter()
+        .take_while(|_| {
+            mods4.press_button();
+            !mods4.all_states_off()
+        })
+        .count();
+
+    println!("{c1}, {c2},{c3},{c4}");
     println!("Part 2: {},{}, {}", l * h, l ,h);
 
 }
