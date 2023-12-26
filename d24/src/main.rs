@@ -31,16 +31,16 @@ fn main() {
         for j in (i+1)..particles.len() {
             if particles[i].intersetcts(
                 &particles[j],
-                test_area,
-                false) {
+                Some(test_area)) {
                 res += 1;
             }
         }
     };
     println!("Part 1: {}", res);
 
+    find_rock_line(&particles);
 }
-
+#[derive(Copy, Clone, Default, Debug)]
 struct Particle<T> {
     x: T,
     y: T,
@@ -51,7 +51,7 @@ struct Particle<T> {
 }
 
 impl Particle<f64> {
-    fn intersetcts(&self, other: &Self, area: [[f64; 2];3], usez: bool) -> bool {
+    fn intersetcts(&self, other: &Self, area: Option<[[f64; 2];3]>) -> bool {
         let mu = ((other.y - self.y) *self.vx /self.vy - other.x + self.x)/( other.vx - other.vy * self.vx / self.vy );
         let lam = ((self.y - other.y) *other.vx /other.vy - self.x + other.x)/( self.vx - self.vy * other.vx / other.vy );
 
@@ -61,25 +61,75 @@ impl Particle<f64> {
         }
         let cx = other.x + mu * other.vx;
         // println!("X: {}",cx);
-        if cx < area[0][0] || cx > area[0][1] {
-            return false;
+        if let Some(area) = area {
+            if cx < area[0][0] || cx > area[0][1] {
+                return false;
+            }
         }
         let cy = other.y + mu * other.vy;
         // println!("Y: {}",cy);
-        if cy < area[1][0] || cy > area[1][1] {
-            return false;
+        if let Some(area) = area {
+            if cy < area[1][0] || cy > area[1][1] {
+                return false;
+            }
         }
-        if !usez {
-            return true;
-        }
-        // let cz = self.z + f * self.vz;
-        // if cz != other.z + f* other.vz  || cz < area[2][0] || cy > area[2][1] {
+        // let cz = other.z + mu * other.vz;
+        // if cz != self.z + lam * self.vz {
         //     return false;
         // }
         true
     }
+
+    fn intersetction(&self, other: &Self) -> Option<Self> {
+        let mu = ((other.y - self.y) *self.vx /self.vy - other.x + self.x)/( other.vx - other.vy * self.vx / self.vy );
+        if mu.is_infinite() {
+            return None;
+        }
+        let x = other.x + mu * other.vx;
+        let y = other.y + mu * other.vy;
+        let z = other.z + mu * other.vz;
+
+        return Some(Self { x, y, z, vx: 0.0, vy: 0.0, vz: 0.0})
+    }
+
+    fn parallel(&self, other: &Self) -> bool {
+        let mu = ((other.y - self.y) *self.vx /self.vy - other.x + self.x)/( other.vx - other.vy * self.vx / self.vy );
+        mu.is_infinite()
+    }
 }
 
+
+fn find_rock_line(particles: &Vec<Particle<f64>>) {
+    let mut planes = [Particle::<f64>::default();4];
+    let mut idx = 0;
+    for i in 0..particles.len() {
+        for j in (i+1)..particles.len() {
+            if particles[i].parallel(
+                &particles[j]) {
+                if idx == 0 {
+                    planes[idx] = particles[i];
+                    planes[idx + 1] = particles[j];
+                    idx += 2;
+                    break;
+                } else {
+                    if !planes[0].parallel(&particles[i]) {
+                        planes[idx] = particles[i];
+                        planes[idx + 1] = particles[j];
+                        idx += 2;
+                        break;
+                    }
+                }
+            }
+        }
+        if idx == 4{
+            break;
+        }
+    }
+
+
+
+    println!("{:?}", planes);
+}
 
 #[cfg(test)]
 mod tests {
@@ -95,3 +145,6 @@ mod tests {
 }
 
 // mu  = ((y2 - y1) *vx1 /vy1 -x2 + x1)/( vx2 - vy2 * vx1 /vy1 )
+/*
+ * find x s.t. x_i
+ */
