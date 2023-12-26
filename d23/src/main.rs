@@ -12,41 +12,32 @@ fn main() {
 
     let start_col =grid[0].iter().position(|x| *x == b'.').unwrap();
     let start =vec![ (0,start_col), (1,start_col)];
-    let ways = walk(&grid, start, true).unwrap();
+    let ways = grd_walk(&grid, start, true).unwrap();
 
-    println!("{:?}", ways);
+    // println!("{:?}", ways);
     let res = ways.iter().fold(0, |a,&i| {
         if a > i {
             return a;
         }
         i
     });
-    println!("Part 1: {res}.");
+    println!("Part 1 (on grd): {res}.");
 
     let nodes1 = grd_to_node(&grid, true);
-    for node in nodes1.iter() {
-        println!("{:?}", node);
-    }
-    println!("{:?}", nodes1.len());
-    let ways = walk2(&nodes1, vec![(0,start_col)], grid.len() - 1).unwrap();
+    let ways = node_walk(&nodes1, vec![(0,start_col)], grid.len() - 1).unwrap();
 
 
-    println!("{:?}", ways);
     let res = ways.iter().fold(0, |a,&i| {
         if a > i {
             return a;
         }
         i
     });
-    println!("Part 1: {res}.");
+    println!("Part 1 (on nodes): {res}.");
 
 
     let nodes2 = grd_to_node(&grid, false);
-    for node in nodes2.iter() {
-        println!("{:?}", node);
-    }
-    println!("{:?}", nodes2.len());
-    let ways = walk2(&nodes2, vec![(0,start_col)], grid.len() - 1).unwrap();
+    let ways = node_walk(&nodes2, vec![(0,start_col)], grid.len() - 1).unwrap();
     let res = ways.iter().fold(0, |a,&i| {
         if a > i {
             return a;
@@ -61,7 +52,7 @@ fn main() {
 
 
 
-fn walk(grd: &Vec<Vec<u8>>, mut p_history: Vec<(usize,usize)>, part1: bool) -> Option<Vec<usize>> {
+fn grd_walk(grd: &Vec<Vec<u8>>, mut p_history: Vec<(usize,usize)>, part1: bool) -> Option<Vec<usize>> {
 
     let (mut r, mut c) = p_history.last().unwrap();
     loop {
@@ -111,7 +102,7 @@ fn walk(grd: &Vec<Vec<u8>>, mut p_history: Vec<(usize,usize)>, part1: bool) -> O
                 .filter_map(|next| {
                     let mut p_hist = p_history.clone();
                     p_hist.push(next);
-                    walk(grd, p_hist, part1)
+                    grd_walk(grd, p_hist, part1)
                 })
                 .fold(vec![], |mut a,mut i| {
                     a.append(&mut i);
@@ -122,7 +113,7 @@ fn walk(grd: &Vec<Vec<u8>>, mut p_history: Vec<(usize,usize)>, part1: bool) -> O
 }
 
 
-fn walk2(nodes: &HashMap<(usize,usize), Vec<((usize,usize), usize)>>, p_history: Vec<(usize,usize)>, lrow: usize) -> Option<Vec<usize>> {
+fn node_walk(nodes: &HashMap<(usize,usize), Vec<((usize,usize), usize)>>, p_history: Vec<(usize,usize)>, lrow: usize) -> Option<Vec<usize>> {
     let (r, c) = p_history.last().unwrap();
     if *r == lrow {
         return Some(vec![0]);
@@ -138,7 +129,7 @@ fn walk2(nodes: &HashMap<(usize,usize), Vec<((usize,usize), usize)>>, p_history:
                         }
                         let mut p_history = p_history.clone();
                         p_history.push(x.0);
-                        let mut routes = walk2(&nodes, p_history, lrow)?;
+                        let mut routes = node_walk(&nodes, p_history, lrow)?;
                         for r in routes.iter_mut() {
                             *r += x.1;
                         };
@@ -176,8 +167,8 @@ fn grd_to_node(grd: &Vec<Vec<u8>>, part1: bool) -> HashMap<(usize,usize), Vec<((
         (lr, lc) = (lnr, lnc);
         plen = 1;
         let mut dir = false;
-        println!("o: {r},{c}");
-        println!("queue: {:?}", queue);
+        // println!("o: {r},{c}");
+        // println!("queue: {:?}", queue);
         loop {
             // println!("i: {r},{c}");
             // println!("{r},{c}");
@@ -226,11 +217,13 @@ fn grd_to_node(grd: &Vec<Vec<u8>>, part1: bool) -> HashMap<(usize,usize), Vec<((
                     break;
                 }
                 if res.get(&(r,c)).is_some() {
-                    if let Some(v) = res.get_mut(&(r,c)) {
-                        v.push(((lnr, lnc), plen));
-                    }
                     if let Some(v) = res.get_mut(&(lnr,lnc)) {
                         v.push(((lr,lc),plen));
+                    }
+                    if !dir {
+                        if let Some(v) = res.get_mut(&(r,c)) {
+                            v.push(((lnr, lnc), plen));
+                        }
                     }
                     break;
                 }
