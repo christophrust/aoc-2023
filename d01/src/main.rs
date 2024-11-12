@@ -13,40 +13,28 @@ fn main() {
         .into_iter()
         .map(|x| {
             let x = x.unwrap();
-            first_and_last_digit_d(x)
+            first_and_last_digit_part1(x)
         })
         .sum();
 
     println!("Result of part 1: {}", s);
 
     // part 2
-
     let file = File::open("input.txt")
          .unwrap();
-    let mut cnt = 0_usize;
-    let mut s2 = 0_u32;
     let s : u32 = io::BufReader::new(&file)
         .lines()
         .into_iter()
         .map(|x| {
             let x = x.unwrap();
-            cnt += 1;
-            let res = first_and_last_digit(x.clone(), true);
-            let res2 = first_and_last_digit(x.clone(), false);
-            let res3 = first_and_last_digit_d(x.clone());
-            s2 += res2;
-            if res2 < res3   {
-                println!("{} -> {}, {}, {}", x, res, res2, res3);
-            }
-            res
+            first_and_last_digit(x.clone(), true)
         })
         .sum();
-    println!("{}, {}", cnt, s2);
     println!("Result of part 2: {}", s);
 }
 
 
-fn first_and_last_digit_d(s: String) -> u32 {
+fn first_and_last_digit_part1(s: String) -> u32 {
     let mut res = 0_u32;
     let mut c = s.chars();
 
